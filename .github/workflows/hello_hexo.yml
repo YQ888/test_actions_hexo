@@ -1,40 +1,58 @@
-name: Deploy
-
-on: [push]
+name: yxqz_test_hexo
+# 当有改动推送到master分支时，启动Action
+on:
+  push:
+    branches:
+      - master
+      #2020年10月后github新建仓库默认分支改为main，注意更改
+  release:
+    types:
+      - published
 
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
-    name: A job to deploy blog.
     steps:
-    - name: Checkout
-      uses: actions/checkout@v1
-      with:
-        submodules: true # Checkout private submodules(themes or something else).
-    
-    # Caching dependencies to speed up workflows. (GitHub will remove any cache entries that have not been accessed in over 7 days.)
-    - name: Cache node modules
-      uses: actions/cache@v1
-      id: cache
-      with:
-        path: node_modules
-        key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-        restore-keys: |
-          ${{ runner.os }}-node-
-    - name: Install Dependencies
-      if: steps.cache.outputs.cache-hit != 'true'
-      run: npm ci
-    
-    # Deploy hexo blog website.
-    - name: Deploy
-      id: deploy
-      uses: sma11black/hexo-action@v1.0.3
-      with:
-        deploy_key: ${{ secrets.DEPLOY_KEY }}
-        user_name: your github username  # (or delete this input setting to use bot account)
-        user_email: your github useremail  # (or delete this input setting to use bot account)
-        commit_msg: ${{ github.event.head_commit.message }}  # (or delete this input setting to use hexo default settings)
-    # Use the output from the `deploy` step(use for test action)
-    - name: Get the output
-      run: |
-        echo "${{ steps.deploy.outputs.notify }}"
+      - name: 检查分支
+        uses: actions/checkout@v2
+        with:
+          ref: master
+
+      - name: 安装 Node
+        uses: actions/setup-node@v1
+        with:
+          node-version: '12.x'
+
+      - name: 安装 Hexo
+        run: |
+          export TZ='Asia/Shanghai'
+          npm install hexo-cli -g
+
+      - name: 缓存 Hexo
+        uses: actions/cache@v1
+        id: cache
+        with:
+          path: node_modules
+          key: ${{runner.OS}}-${{hashFiles('**/package-lock.json')}}
+
+      - name: 安装依赖
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          npm install gulp-cli -g #全局安装gulp
+          npm install --save
+
+      - name: 生成静态文件
+        run: |
+          hexo clean
+          hexo bangumi -u #bilibili番剧更新
+          hexo generate
+          gulp
+
+      - name: 部署到Github
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          token: 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
+          repository-name: YQ888/YQ888.github.io
+          branch: main
+          folder: public
+          commit-message: '${{ github.event.head_commit.message }} Updated By Github Actions'
