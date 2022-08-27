@@ -1,13 +1,6 @@
 name: yxqz_test_hexo
-# 当有改动推送到master分支时，启动Action
-on:
-  push:
-    branches:
-      - master
-      #2020年10月后github新建仓库默认分支改为main，注意更改
-  release:
-    types:
-      - published
+# 提交的时候执行
+on: [push]
 
 jobs:
   deploy:
@@ -51,7 +44,7 @@ jobs:
       - name: 部署到Github
         uses: JamesIves/github-pages-deploy-action@v4
         with:
-          token: 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
+          #token: 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
           repository-name: YQ888/YQ888.github.io
           branch: main
           folder: public
